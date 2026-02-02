@@ -122,29 +122,41 @@ const App: React.FC = () => {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    // Reset input để có thể upload cùng file lại
+    e.target.value = '';
+
     setLoading(true);
     try {
-      const reader = new FileReader();
-      reader.onload = async (event) => {
-        const base64 = event.target?.result?.toString().split(',')[1];
-        if (base64) {
-          const result = await analyzeExam("", base64);
-          const newExam: Exam = {
-            id: Date.now().toString(),
-            title: result.title || "Đề thi mới phân tích",
-            createdAt: Date.now(),
-            questions: result.questions.map((q: any, i: number) => ({ ...q, id: i.toString(), order: i + 1 })),
-            matrix: result.matrix
-          };
-          setCurrentExam(newExam);
-          saveToHistory(newExam);
-          showToast("Phân tích đề thi thành công!");
-        }
+      // Wrap FileReader in Promise
+      const base64 = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          const result = event.target?.result?.toString();
+          if (result) {
+            const data = result.split(',')[1];
+            resolve(data);
+          } else {
+            reject(new Error('Không thể đọc file'));
+          }
+        };
+        reader.onerror = () => reject(new Error('Lỗi đọc file'));
+        reader.readAsDataURL(file);
+      });
+
+      const result = await analyzeExam("", base64);
+      const newExam: Exam = {
+        id: Date.now().toString(),
+        title: result.title || `Đề thi từ ${file.name}`,
+        createdAt: Date.now(),
+        questions: result.questions.map((q: any, i: number) => ({ ...q, id: i.toString(), order: i + 1 })),
+        matrix: result.matrix
       };
-      reader.readAsDataURL(file);
-    } catch (error) {
-      console.error(error);
-      showToast("Có lỗi khi xử lý file!", "error");
+      setCurrentExam(newExam);
+      saveToHistory(newExam);
+      showToast("Phân tích đề thi thành công!");
+    } catch (error: any) {
+      console.error('File upload error:', error);
+      showToast(error.message || "Có lỗi khi xử lý file!", "error");
     } finally {
       setLoading(false);
     }
