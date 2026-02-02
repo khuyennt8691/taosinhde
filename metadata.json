@@ -1,0 +1,8 @@
+
+{
+  "name": "PhysiGenius - Hệ thống Tạo Đề Vật Lý AI",
+  "description": "Ứng dụng AI phân tích và tạo sinh bộ đề kiểm tra Vật lý THPT dựa trên đề gốc, giữ nguyên ma trận kiến thức.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
